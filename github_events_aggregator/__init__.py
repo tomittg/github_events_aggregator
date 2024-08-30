@@ -1,0 +1,1 @@
+from github_events_aggregator.pipeline import run_pipeline
