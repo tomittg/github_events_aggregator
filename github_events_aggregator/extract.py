@@ -1,17 +1,13 @@
-import requests
 import gzip
-from pyspark.sql import SparkSession
-
+import requests
+from requests.adapters import HTTPAdapter
 
 from github_events_aggregator.config.config import get_config
 
 
 def download_data():
-    spark = SparkSession.builder \
-        .appName("JSON to DataFrame") \
-        .config("spark.driver.memory", "4g") \
-        .config("spark.executor.instances", "4") \
-        .getOrCreate()
+    sess = requests.Session()
+    sess.mount('https://', HTTPAdapter(max_retries=20))
 
     config = get_config()
     base_url = config['data_source']['base_url']
@@ -25,7 +21,7 @@ def download_data():
             url = base_url.format(day=day, hour=hour)
             try:
                 print(f'Extracting day {day}, hour {hour}')  # pending to use logger instead of prints
-                response = requests.get(url)
+                response = sess.get(url)
                 response.raise_for_status()
                 unzipped = gzip.decompress(response.content)
                 decoded = unzipped.decode('utf-8').replace("\u2028", "")
@@ -36,5 +32,3 @@ def download_data():
     return json_list
 
 
-if __name__ == "__main__":
-    download_data()
