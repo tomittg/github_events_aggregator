@@ -1,17 +1,34 @@
+import logging
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_date, countDistinct, when
 
+logger = logging.getLogger('pipeline.transform')
 
-def aggregate_data(data: list[str]):
+
+def aggregate_data(data):
+    """
+    Aggregate data for both repositories and users, obtaining the following info:
+    - Repo aggregation: date, repo_id, repo_name, starred_count, forked_count, created_issues_count, pr_count
+    - User aggregation: date, user_id, user_name, starred_count, created_issues_count
+
+    :param list[str] data: List of jsons containing all the GitHub events
+    :return: Dataframes containing the aggregated data and their name as keys
+    :rtype: dict[str, pyspark.sql.DataFrame]
+    """
+    logger.info('Initializing spark session...')
     spark = SparkSession.builder \
         .appName('JSON to DataFrame') \
         .config('spark.driver.memory', '8g') \
         .config('spark.executor.memory', '8g') \
         .config('spark.executor.instances', '4') \
         .getOrCreate()
+    logger.info('Spark session successfully initialized')
 
+    logger.info(f'Converting list of json extracted ({len(data)} jsons) into pypark dataframe...')
     rdd = spark.sparkContext.parallelize(data, numSlices=10000)
     df = spark.read.json(rdd)
+    logger.info('Dataframe successfully created')
 
     df = df.withColumn('date', to_date(col('created_at')))
 
@@ -22,7 +39,8 @@ def aggregate_data(data: list[str]):
 
 
 def _aggregate_repositories(df):
-    return df.groupBy('date', 'repo.id', 'repo.name') \
+    logger.info('Aggregating repositories...')
+    repo_agg = df.groupBy('date', 'repo.id', 'repo.name') \
         .agg(
         countDistinct(when(col('type') == 'WatchEvent', col('actor.id'))).alias('starred_count'),
         countDistinct(when(col('type') == 'ForkEvent', col('actor.id'))).alias('forked_count'),
@@ -33,12 +51,17 @@ def _aggregate_repositories(df):
             when((col('type') == 'PullRequestEvent') & (col('payload.action') == 'closed'), col('actor.id'))).alias(
             'pr_count')
     )
+    logger.info('Repositories successfully aggregated.')
+    return repo_agg
 
 
 def _aggregate_users(df):
-    return df.groupBy('date', 'actor.id', 'actor.login') \
+    logger.info('Aggregating users...')
+    user_agg = df.groupBy('date', 'actor.id', 'actor.login') \
         .agg(
         countDistinct(when(col('type') == 'WatchEvent', col('repo.id'))).alias('starred_count'),
         countDistinct(when((col('type') == 'IssuesEvent') & (col('payload.action') == 'opened'), col('repo.id'))).alias(
             'created_issues_count')
     )
+    logger.info('Users successfully aggregated.')
+    return user_agg
