@@ -3,8 +3,4 @@ data_source:
   year: "2024"
   month: '01'
 
-output:
-  repo_agg_csv: "data/output/repo_agg.csv"
-  repo_agg_parquet: "data/output/repo_agg.parquet"
-  user_agg_csv: "data/output/user_agg.csv"
-  user_agg_parquet: "data/output/user_agg.parquet"
+output_dir: output
