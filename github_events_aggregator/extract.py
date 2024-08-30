@@ -19,9 +19,7 @@ def download_data():
     month = config['data_source']['month']
 
     base_url = f'{base_url}/{year}-{month}-{{day:02d}}-{{hour}}.json.gz'
-
-    df = None
-
+    json_list = []
     for day in range(1, 32):
         for hour in range(24):
             url = base_url.format(day=day, hour=hour)
@@ -30,17 +28,12 @@ def download_data():
                 response = requests.get(url)
                 response.raise_for_status()
                 unzipped = gzip.decompress(response.content)
-                decoded = unzipped.decode('utf-8')
-                jlist = decoded.splitlines()
-                print(jlist[2])
-                rdd = spark.sparkContext.parallelize(jlist[:2])
-                df_hourly = spark.read.json(rdd)
-                df = df.unionByName(df_hourly) if df is not None else df_hourly
-                break  # for the moment trying to get a single day to get parsed right
+                decoded = unzipped.decode('utf-8').replace("\u2028", "")
+                events_hourly = decoded.splitlines()
+                json_list.extend(events_hourly)
             except requests.exceptions.HTTPError as e:
                 print(e)
-        break
-    df.show(2)
+    return json_list
 
 
 if __name__ == "__main__":
