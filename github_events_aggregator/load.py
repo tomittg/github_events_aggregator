@@ -1,5 +1,7 @@
 import logging
 
+from pathlib import Path
+
 from github_events_aggregator.config.config import get_config
 
 logger = logging.getLogger('pipeline.load')
@@ -18,3 +20,17 @@ def load_data(data):
         df.write.csv(f'{config['output_dir']}/{name}.csv', header=True, mode='overwrite')
         df.write.parquet(f'{config['output_dir']}/{name}.parquet', mode='overwrite')
     logger.info('Loading successfully completed')
+
+
+def clear_cache():
+    """
+    Empties the content of the cached_data folder if there's any
+    """
+    logger.info('Clearing cache...')
+    directory = Path('cached_data')
+
+    for file in directory.glob('*'):
+        if file.is_file():
+            file.unlink()
+
+    logger.info('Cache successfully cleared')

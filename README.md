@@ -30,15 +30,19 @@ This will automatically install all needed Python dependencies.
 
 ## Usage
 
-A single function is available in the package
+There's 2 functions in total, one for running the job and one to clear the cached data
+
 
 ```python
 import github_events_aggregator
 
 github_events_aggregator.run_pipeline()
+github_events_aggregator.clear_cache()
 ```
 This will get the configuration set up in ~/config/config.yaml, which corresponds to the https://www.gharchive.org/ URL 
 to download the data, and January 2024 for the month it will download.
+Then with clear_cache() the downloaded data will be removed. As long as the data is not removed, subsequent calls to 
+run the pipeline will reuse the downloaded data if the same year and month is chosen.
 
 
 ## Features

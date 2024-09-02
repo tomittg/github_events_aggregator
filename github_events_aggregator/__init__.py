@@ -1,1 +1,2 @@
 from github_events_aggregator.pipeline import run_pipeline
+from github_events_aggregator.load import clear_cache
