@@ -13,17 +13,17 @@ logger = logging.getLogger('pipeline')
 
 
 def run_pipeline():
-    start_time = time.time()  # Start time
+    start_time = time.time()
     try:
         logger.info('Starting pipeline...')
-        source_data = download_data()
-        aggregated_data = aggregate_data(source_data)
+        download_data()
+        aggregated_data = aggregate_data()
         load_data(aggregated_data)
-        logger.info('Pipeline successfully complete')
+        logger.info('Pipeline successfully completed')
     except Exception as e:
         logger.exception(e)
     finally:
-        total_time = time.time() - start_time  # Calculate total time
+        total_time = time.time() - start_time
         logger.info(f'Total pipeline execution time: {total_time:.2f} seconds')
 
 

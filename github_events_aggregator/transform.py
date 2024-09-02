@@ -3,19 +3,23 @@ import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_date, countDistinct, when
 
+from github_events_aggregator.config.config import get_config
+
 logger = logging.getLogger('pipeline.transform')
 
 
-def aggregate_data(data):
+def aggregate_data():
     """
     Aggregate data for both repositories and users, obtaining the following info:
     - Repo aggregation: date, repo_id, repo_name, starred_count, forked_count, created_issues_count, pr_count
     - User aggregation: date, user_id, user_name, starred_count, created_issues_count
 
-    :param list[str] data: List of jsons containing all the GitHub events
     :return: Dataframes containing the aggregated data and their name as keys
     :rtype: dict[str, pyspark.sql.DataFrame]
     """
+    config = get_config()
+    source_format = f'{config['data_source']['year']}-{config['data_source']['month']}-*.json'
+
     logger.info('Initializing spark session...')
     spark = SparkSession.builder \
         .appName('JSON to DataFrame') \
@@ -25,9 +29,8 @@ def aggregate_data(data):
         .getOrCreate()
     logger.info('Spark session successfully initialized')
 
-    logger.info(f'Converting list of json extracted ({len(data)} jsons) into pypark dataframe...')
-    rdd = spark.sparkContext.parallelize(data, numSlices=10000)
-    df = spark.read.json(rdd)
+    logger.info(f'Converting list of json extracted into pypark dataframe...')
+    df = spark.read.json(f"cached_data/{source_format}")
     logger.info('Dataframe successfully created')
 
     df = df.withColumn('date', to_date(col('created_at')))
