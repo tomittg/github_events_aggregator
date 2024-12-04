@@ -1,0 +1,4 @@
+/github_events_aggregator/output/
+*.csv
+*.parquet
+*.crc

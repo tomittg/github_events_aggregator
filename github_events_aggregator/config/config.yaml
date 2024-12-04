@@ -1,0 +1,6 @@
+data_source:
+  base_url: "https://data.gharchive.org"
+  year: "2024"
+  month: '01'
+
+output_dir: output
